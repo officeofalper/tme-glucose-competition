@@ -4,7 +4,7 @@
 
 **Author:** Alper Öztürk
 
-**Try it in the browser:** `web/index.html` (spatial model) and `web/simple.html` (simple model). See [Section 6](#6-interactive-versions).
+**Live simulation:** https://officeofalper.github.io/tme-glucose-competition/web/ (spatial model, version 2) and https://officeofalper.github.io/tme-glucose-competition/web/simple.html (simple model, version 1). No installation needed; see [Section 6](#6-interactive-versions).
 
 The repository contains two models of increasing realism:
 
