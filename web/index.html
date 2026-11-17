@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starved in the Tumor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday learning: a PhET-style lab bench, friendly but exact
+   IDEA a stained tissue section under the microscope, with nutrient maps you can switch on like stains
+   PICTURE live 2D tissue: vessel on the left, nutrient heatmap, purple tumor, T cells glowing blue or fading to grey
+   COLOUR white bench, eosin-pink tissue, hematoxylin purple, T-cell blue, glucose amber, glutamine green, lactate magenta
+   TYPE Lexend for titles + Inter for text
+   LAYOUT laptop: tissue left with controls panel right, live graphs in a row below; phone: title, tissue, controls, graphs */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#120c16);--ink:light-dark(#1d1422,#f2eaf4);--muted:light-dark(#66586d,#b6a8bd);
+--panel:light-dark(#f8f3f9,#1b131f);--line:light-dark(#e6d9e9,#38293e);
+--tissue:light-dark(#fbe9ef,#22141d);
+--tumor:light-dark(#6a2c91,#8e4fb8);--nuc:light-dark(#330f4d,#3a1550);--tcell:light-dark(#3d8bff,#6fc0ff);
+--memory:light-dark(#8d8a99,#77727f);--glu:light-dark(#d98a00,#ffb52e);--gln:light-dark(#1d8a4a,#3fcf7c);
+--lac:light-dark(#c2185b,#ff5c9a);--vessel:light-dark(#c1121f,#e5484d);--accent:light-dark(#6a2c91,#c99be8)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(20px,3vw,40px) max(4vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+h1,h2{font-family:Lexend,Inter,sans-serif;letter-spacing:-.02em;line-height:1.08;margin:0}
+h1{font-size:clamp(32px,4.4vw,48px);text-wrap:balance}
+h2{font-size:24px;margin-bottom:10px}
+.top{padding-bottom:12px}
+.top .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px 32px}
+.top p{margin:8px 0 0;max-width:64ch;color:var(--muted)}
+.side{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.note{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 14px;white-space:nowrap}
+a{color:var(--accent);font-weight:600}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px}
+.scene{position:relative;aspect-ratio:3/2;border-radius:16px;overflow:hidden;background:var(--tissue);box-shadow:inset 0 0 0 1px var(--line)}
+.scene canvas{position:absolute;inset:0;width:100%;height:100%}
+.clock{position:absolute;right:12px;top:10px;font:600 15px Lexend,sans-serif;background:color-mix(in srgb,var(--bg) 82%,transparent);padding:4px 10px;border-radius:8px;font-variant-numeric:tabular-nums}
+.maptabs{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.scale{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-left:auto}
+.scale i{display:block;width:120px;height:10px;border-radius:5px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5em,1fr));gap:10px;margin-top:12px}
+.stat{background:var(--panel);border-radius:12px;padding:10px 14px}
+.stat b{display:block;font:600 clamp(22px,2.4vw,28px) Lexend,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat span{font-size:13px;color:var(--muted)}
+.status{margin:12px 0 0;font-weight:600;min-height:1.6em}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend svg{width:18px;height:18px;flex:none}
+.ctrl{background:var(--panel);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;align-self:start}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+button{font:600 15px Inter,sans-serif;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--tcell);outline-offset:2px}
+button.main{background:var(--accent);color:var(--bg);border-color:var(--accent);flex:1}
+button[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 16%,var(--bg));border-color:var(--accent)}
+.seg button{padding:0 12px}
+.presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.presets button{font-size:14px;font-weight:500;text-align:left;padding:6px 12px;line-height:1.25}
+.presets button:nth-child(n+3){grid-column:1/-1}
+.lbl{font-size:13px;font-weight:600;color:var(--muted)}
+.sl label{display:flex;justify-content:space-between;gap:8px;font-size:15px;font-weight:500}
+.sl output{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.sl small{display:block;font-size:13px;color:var(--muted)}
+input[type=range]{width:100%;height:40px;margin:0;accent-color:var(--accent);cursor:pointer}
+.group{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:4px}
+.toggle{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px;font-weight:500}
+.charts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.chart header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:15px;font-weight:600}
+.chart header span{font-size:13px;color:var(--muted);font-weight:500}
+.fig{position:relative;height:180px;margin-top:4px}
+.fig canvas{position:absolute;inset:0;width:100%;height:100%}
+.about{background:var(--panel);margin-top:12px}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.about p,.about li{max-width:68ch;margin:0 0 10px}
+.about ol,.about ul{padding-left:20px;margin:0}
+.foot{font-size:13px;color:var(--muted)}
+.pal{display:none}
+@media(max-width:900px){.lab{grid-template-columns:minmax(0,1fr)}.cols{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){.charts{grid-template-columns:minmax(0,1fr)}.fig{height:150px}.side{align-items:flex-start}.scale{margin-left:0}}
+</style>
+</head>
+<body>
+<header class="band top"><div class="wrap">
+  <div>
+    <h1>Starved in the Tumor</h1>
+    <p>A slice of tissue fed by one blood vessel. Tumor cells and killer T cells compete for glucose and glutamine, and the tumor fills the tissue with lactate. Watch the T cells switch off when they run out of fuel, and test treatments that change the balance.</p>
+  </div>
+  <div class="side">
+    <div class="note">Simplified illustrative model, not experimental data</div>
+    <a href="simple.html">Open the simple model (version 1)</a>
+  </div>
+</div></header>
+
+<main class="band" style="padding-top:8px"><div class="wrap lab">
+  <section>
+    <div class="scene" id="sceneBox"><canvas id="scene" aria-label="Animated tissue map with blood vessel, nutrients, tumor cells and T cells"></canvas><div class="clock" id="clock">t = 0</div></div>
+    <div class="maptabs" role="group" aria-label="Background map">
+      <span class="lbl">Show</span>
+      <button data-map="G" aria-pressed="true">Glucose</button><button data-map="Q" aria-pressed="false">Glutamine</button><button data-map="L" aria-pressed="false">Lactate</button><button data-map="-" aria-pressed="false">None</button>
+      <div class="scale" id="scale"><span>0</span><i id="scaleBar"></i><span id="scaleMax">10</span></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Tumor cells</span><b id="vN">0</b></div>
+      <div class="stat"><span>Effector T cells</span><b id="vE">0</b></div>
+      <div class="stat"><span>Memory-like T cells</span><b id="vM">0</b></div>
+      <div class="stat"><span>Glucose in tumor</span><b id="vG">0</b></div>
+    </div>
+    <p class="status" id="status" aria-live="polite"></p>
+    <div class="legend">
+      <span><svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="var(--tumor)"/><circle cx="10" cy="8" r="3.5" fill="var(--nuc)"/></svg>Tumor cells</span>
+      <span><svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="var(--tcell)"/><circle cx="9" cy="9" r="2.6" fill="#fff" opacity=".75"/></svg>Effector T cell (glycolytic, kills)</span>
+      <span><svg viewBox="0 0 18 18"><rect x="3" y="3" width="12" height="12" rx="3" fill="var(--memory)" stroke="var(--ink)" stroke-width="1.2"/></svg>Memory-like T cell (quiet, OXPHOS/FAO)</span>
+      <span><svg viewBox="0 0 18 18"><rect x="5" y="0" width="8" height="18" rx="3" fill="var(--vessel)"/></svg>Blood vessel</span>
+    </div>
+  </section>
+
+  <aside class="ctrl" aria-label="Controls">
+    <div class="row">
+      <button class="main" id="play">Pause</button>
+      <button id="reset">Reset</button>
+    </div>
+    <div class="row seg" role="group" aria-label="Speed">
+      <span class="lbl" style="align-self:center;margin-right:4px">Speed</span>
+      <button data-sp="1" aria-pressed="true">1×</button><button data-sp="2" aria-pressed="false">2×</button><button data-sp="4" aria-pressed="false">4×</button>
+    </div>
+    <div>
+      <div class="lbl" style="margin-bottom:6px">Scenarios</div>
+      <div class="presets" id="presets"></div>
+    </div>
+    <div class="group">
+      <div class="lbl">Starting tissue (changes restart the run)</div>
+      <div class="sl"><label for="rad">Tumor radius <output id="o_rad"></output></label><input type="range" id="rad" min="0" max="10" step="1"></div>
+      <div class="sl"><label for="pos">Distance from vessel <output id="o_pos"></output></label><input type="range" id="pos" min="12" max="50" step="1"></div>
+      <div class="sl"><label for="nt">Number of T cells <output id="o_nt"></output></label><input type="range" id="nt" min="0" max="80" step="5"></div>
+    </div>
+    <div class="group">
+      <div class="lbl">Treatments (act immediately)</div>
+      <div class="sl"><label for="gdrug">Blocks tumor glucose uptake <output id="o_gdrug"></output></label><input type="range" id="gdrug" min="0" max="90" step="5"></div>
+      <div class="sl"><label for="side">Same drug's effect on T cells <output id="o_side"></output></label><input type="range" id="side" min="0" max="90" step="5"></div>
+      <div class="sl"><label for="qdrug">Blocks tumor glutamine uptake <output id="o_qdrug"></output></label><input type="range" id="qdrug" min="0" max="90" step="5"></div>
+    </div>
+    <div class="group">
+      <div class="toggle"><span>Lactate suppresses T cells</span><button id="lac" aria-pressed="true">On</button></div>
+    </div>
+  </aside>
+</div></main>
+
+<section class="band" style="padding-top:0" aria-label="Live graphs"><div class="wrap charts">
+  <div class="chart"><header>Tumor cells <span>dashed: previous run</span></header><div class="fig"><canvas id="cN"></canvas></div></div>
+  <div class="chart"><header>Glucose inside the tumor <span>dashed: previous run</span></header><div class="fig"><canvas id="cG"></canvas></div></div>
+  <div class="chart"><header><span style="color:var(--ink);font-size:15px;font-weight:600">T cells: <b style="color:var(--tcell)">effector</b> / <b style="color:var(--memory)">memory-like</b></span></header><div class="fig"><canvas id="cT"></canvas></div></div>
+</div></section>
+
+<section class="band about"><div class="wrap cols">
+  <div>
+    <h2>Try these experiments</h2>
+    <ol>
+      <li><b>Find the escape size.</b> With no drugs, try tumor radius 2, 3 and 4. Small tumors are cleared; from about radius 4 the tumor drains the nutrients around it, the T cells turn grey and the tumor escapes.</li>
+      <li><b>One drug or two?</b> On "Large tumor", find the lowest glucose-blocking dose that works on its own. Then reset and try 50% glucose block plus 50% glutamine block together.</li>
+      <li><b>Watch the switch back.</b> Load "Glucose + glutamine drugs" and follow the T-cell graph: some cells go memory-like, then return to effector once the tumor shrinks and nutrients come back.</li>
+      <li><b>Space matters.</b> Move a large tumor close to the vessel (distance 12). Does more food help the tumor or the T cells more?</li>
+      <li><b>Lactate.</b> Switch lactate suppression off on "Large tumor + glucose drug that also hits T cells". How much of the T-cell failure was due to lactate?</li>
+    </ol>
+  </div>
+  <div>
+    <h2>How the model works</h2>
+    <p>The tissue is a 60 × 40 grid. Glucose, glutamine and lactate diffuse between squares. The vessel on the left keeps glucose and glutamine at blood levels and washes lactate away, so squares far from the vessel get less food.</p>
+    <ul>
+      <li><b>Tumor cells</b> take up glucose and glutamine with high affinity, turn much of the glucose into lactate, and grow when both nutrients are available.</li>
+      <li><b>T cells</b> are individual agents. Their fitness is glucose × glutamine supply, reduced by lactate. Effectors move toward the tumor and kill in proportion to fitness.</li>
+      <li><b>Switch:</b> an effector whose fitness stays below 0.15 for 5 time units becomes memory-like: slow, using 20% of the fuel, not killing. Above 0.35 for 5 time units it switches back.</li>
+    </ul>
+    <p>All values are arbitrary units chosen to show behaviour. The same model is in <b>tme_spatial.py</b>; the random paths of T cells differ between runs, so numbers vary a little.</p>
+  </div>
+  <div>
+    <h2>Where this comes from</h2>
+    <p>Based on my published review <b>"Immunometabolism: How Metabolic Reprogramming Controls Immune Cell Activation and Function"</b> (#93). It describes effector T cells relying on aerobic glycolysis and glutaminolysis, memory T cells relying on FAO and OXPHOS with AMPK favouring that state (Sections 2.3, 6.1), and tumor cells competing for glucose and amino acids, building up lactate and suppressing effector T-cell glycolysis (Section 6.4).</p>
+    <p>The tumor's glucose-to-lactate metabolism stands in for the Warburg effect, and its glutamine use for glutaminolysis, both discussed in my paper <b>"Metabolic Reprogramming in Cancer Cells"</b> (#94).</p>
+    <p>The equations, numbers, switching rule, spatial layout and drug experiments are my own modelling choices, not results from the papers. The model leaves out hypoxia, T-cell proliferation and death, new T cells arriving from blood, and real chemokine signals.</p>
+    <p class="foot">Alper Öztürk · Python version: tme_spatial.py in the project repository</p>
+  </div>
+</div></section>
+
+<div class="pal" id="pal"><i data-c="ink" style="color:var(--ink)"></i><i data-c="muted" style="color:var(--muted)"></i><i data-c="line" style="color:var(--line)"></i><i data-c="bg" style="color:var(--bg)"></i><i data-c="tissue" style="color:var(--tissue)"></i><i data-c="tumor" style="color:var(--tumor)"></i><i data-c="nuc" style="color:var(--nuc)"></i><i data-c="tcell" style="color:var(--tcell)"></i><i data-c="memory" style="color:var(--memory)"></i><i data-c="glu" style="color:var(--glu)"></i><i data-c="gln" style="color:var(--gln)"></i><i data-c="lac" style="color:var(--lac)"></i><i data-c="vessel" style="color:var(--vessel)"></i></div>
+
+<script>
+{
+const $ = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---- Model parameters: same values as tme_spatial.py ----
+const P = {nx:60, ny:40, dt:.1, tEnd:300, bG:10, bQ:5, DG:1, DQ:1, DL:1, DN:.02, tissue:.002, lacDecay:.01,
+  tGv:.05, tGk:1, tQv:.02, tQk:.5, lacYield:1.5, growth:.04, cap:10,
+  cGv:.1, cGk:1.5, cQv:.05, cQk:1, lacKi:3, kill:2, effSpeed:1.5, memSpeed:.15, memUse:.2,
+  down:.15, up:.35, delay:5, bias:.5};
+const NX = P.nx, NY = P.ny, NC = NX*NY;
+const PRESETS = [
+  ['Small tumor',  {rad:3, pos:38, nt:40, gdrug:0,  side:0,  qdrug:0}],
+  ['Large tumor',  {rad:7, pos:38, nt:40, gdrug:0,  side:0,  qdrug:0}],
+  ['Large tumor + glucose drug (80%)', {rad:7, pos:38, nt:40, gdrug:80, side:0, qdrug:0}],
+  ['Large tumor + glucose drug that also hits T cells', {rad:7, pos:38, nt:40, gdrug:80, side:80, qdrug:0}],
+  ['Large tumor + glucose and glutamine drugs (50% each)', {rad:7, pos:38, nt:40, gdrug:50, side:0, qdrug:50}]
+];
+const ids = ['rad','pos','nt','gdrug','side','qdrug'];
+const restartIds = ['rad','pos','nt'];
+const fmt = {rad:v=>v, pos:v=>v, nt:v=>v, gdrug:v=>v+'%', side:v=>v+'%', qdrug:v=>v+'%'};
+const val = k => +$(k).value;
+const sat = (c,k) => c/(k+c);
+let lacOn = true;
+
+let seed = 1; const rnd = () => (seed = seed*16807 % 2147483647) / 2147483647;
+const lap = (F, x, y) => {
+  const i = y*NX + x, xl = x>0 ? i-1 : i, xr = x<NX-1 ? i+1 : i, yu = y>0 ? i-NX : i, yd = y<NY-1 ? i+NX : i;
+  return F[xl] + F[xr] + F[yu] + F[yd] - 4*F[i];
+};
+const fitness = (G, Q, L, block) => (1-block)*sat(G,P.cGk)*sat(Q,P.cQk) / (1 + (lacOn ? L/P.lacKi : 0));
+
+// ---- Healthy tissue nutrient gradient (computed once, like settle_nutrients) ----
+const base = (() => {
+  let G = new Float64Array(NC).fill(P.bG), Q = new Float64Array(NC).fill(P.bQ);
+  for (let k = 0; k < 2000; k++){
+    const G2 = new Float64Array(NC), Q2 = new Float64Array(NC);
+    for (let y = 0; y < NY; y++) for (let x = 0; x < NX; x++){
+      const i = y*NX + x;
+      G2[i] = x === 0 ? P.bG : G[i] + P.dt*(P.DG*lap(G,x,y) - P.tissue*G[i]);
+      Q2[i] = x === 0 ? P.bQ : Q[i] + P.dt*(P.DQ*lap(Q,x,y) - P.tissue*Q[i]);
+    }
+    G = G2; Q = Q2;
+  }
+  return {G, Q};
+})();
+
+let S, hist, ghost = null, playing = !reduce, speed = 1, startN = 0, map = 'G';
+const tumorCenter = () => [val('pos'), 20];
+
+function init(){
+  seed = 1;
+  const [cx, cy] = tumorCenter(), R = val('rad');
+  const N = new Float64Array(NC);
+  for (let y = 0; y < NY; y++) for (let x = 0; x < NX; x++) if (Math.hypot(x-cx, y-cy) < R) N[y*NX+x] = .8*P.cap;
+  const n = val('nt'), tc = [];
+  for (let k = 0; k < n; k++) tc.push({x: 1 + rnd()*3, y: 1 + rnd()*(NY-3), eff: true, timer: 0, fit: 1});
+  S = {t:0, G: base.G.slice(), Q: base.Q.slice(), L: new Float64Array(NC), N, tc};
+}
+
+function step(){
+  const dt = P.dt, {G, Q, L, N, tc} = S;
+  const tb = val('gdrug')/100, cb = val('side')/100, qb = val('qdrug')/100;
+  const tcG = new Float64Array(NC), tcQ = new Float64Array(NC), kill = new Float64Array(NC);
+  for (const c of tc){
+    const i = Math.min(NY-1, c.y|0)*NX + Math.min(NX-1, c.x|0);
+    c.i = i;
+    c.fit = fitness(G[i], Q[i], L[i], cb);
+    const use = c.eff ? 1 : P.memUse;
+    tcG[i] += P.cGv*(1-cb)*sat(G[i],P.cGk)*use;
+    tcQ[i] += P.cQv*sat(Q[i],P.cQk)*use;
+    if (c.eff) kill[i] += P.kill*c.fit;
+  }
+  const G2 = new Float64Array(NC), Q2 = new Float64Array(NC), L2 = new Float64Array(NC), N2 = new Float64Array(NC);
+  for (let y = 0; y < NY; y++) for (let x = 0; x < NX; x++){
+    const i = y*NX + x;
+    if (x === 0){ G2[i] = P.bG; Q2[i] = P.bQ; L2[i] = 0; N2[i] = 0; continue; }
+    const gf = (1-tb)*sat(G[i],P.tGk), qf = (1-qb)*sat(Q[i],P.tQk);
+    const gUse = P.tGv*gf*N[i], qUse = P.tQv*qf*N[i];
+    const grow = P.growth*gf*qf*N[i]*(1 - N[i]/P.cap);
+    const k = Math.min(kill[i], N[i]/dt);
+    G2[i] = Math.max(0, G[i] + dt*(P.DG*lap(G,x,y) - P.tissue*G[i] - gUse - tcG[i]));
+    Q2[i] = Math.max(0, Q[i] + dt*(P.DQ*lap(Q,x,y) - P.tissue*Q[i] - qUse - tcQ[i]));
+    L2[i] = Math.max(0, L[i] + dt*(P.DL*lap(L,x,y) - P.lacDecay*L[i] + P.lacYield*gUse));
+    N2[i] = Math.min(P.cap, Math.max(0, N[i] + dt*(P.DN*lap(N,x,y) + grow - k)));
+  }
+  S.G = G2; S.Q = Q2; S.L = L2; S.N = N2;
+  // switch between effector and memory-like states
+  for (const c of tc){
+    const wants = c.eff ? c.fit < P.down : c.fit > P.up;
+    c.timer = wants ? c.timer + dt : 0;
+    if (c.timer >= P.delay){ c.eff = !c.eff; c.timer = 0; }
+  }
+  // movement: effectors climb the tumor gradient, everyone wanders
+  const Nn = S.N; let total = 0; for (let i = 0; i < NC; i++) total += Nn[i];
+  const [cx, cy] = tumorCenter();
+  for (const c of tc){
+    const x = Math.min(NX-1, c.x|0), y = Math.min(NY-1, c.y|0), i = y*NX + x;
+    const gx = Nn[x<NX-1 ? i+1 : i] - Nn[x>0 ? i-1 : i], gy = Nn[y<NY-1 ? i+NX : i] - Nn[y>0 ? i-NX : i];
+    let nrm = Math.hypot(gx, gy), dx, dy;
+    if (nrm < 1e-6){ const d = Math.hypot(cx-c.x, cy-c.y) + 1e-9; dx = (cx-c.x)/d; dy = (cy-c.y)/d; } else { dx = gx/nrm; dy = gy/nrm; }
+    if (total < .5){ dx = 0; dy = 0; }
+    const sp = c.eff ? P.effSpeed : P.memSpeed, b = c.eff ? P.bias : 0, a = rnd()*6.2832;
+    c.x = Math.min(Math.max(c.x + sp*(b*dx + (1-b)*Math.cos(a))*dt, 1), NX-1.01);
+    c.y = Math.min(Math.max(c.y + sp*(b*dy + (1-b)*Math.sin(a))*dt, 0), NY-.01);
+  }
+  S.t += dt;
+}
+
+function summary(){
+  let N = 0, gSum = 0, gCount = 0, Lmax = 0;
+  for (let i = 0; i < NC; i++){ N += S.N[i]; if (S.N[i] > 1){ gSum += S.G[i]; gCount++; } if (S.L[i] > Lmax) Lmax = S.L[i]; }
+  const eff = S.tc.filter(c => c.eff).length;
+  return {N, G: gCount ? gSum/gCount : null, eff, mem: S.tc.length - eff, Lmax};
+}
+function record(){
+  const s = summary();
+  hist.t.push(S.t); hist.N.push(s.N); hist.G.push(s.G); hist.eff.push(s.eff); hist.mem.push(s.mem);
+}
+
+// ---- Colours from CSS (works in light and dark) ----
+let C = {};
+function readColours(){
+  document.querySelectorAll('#pal i').forEach(i => { C[i.dataset.c] = getComputedStyle(i).color.match(/[\d.]+/g).slice(0,3).map(Number); });
+  const m = MAPS[map]; $('scaleBar').style.background = m ? `linear-gradient(90deg, rgb(${C.tissue}), rgb(${C[m.c]}))` : 'none';
+}
+const col = (c, a=1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const mix = (a, b, t) => a.map((v,i) => Math.round(v*(1-t) + b[i]*t));
+const MAPS = {G:{c:'glu', max:()=>P.bG}, Q:{c:'gln', max:()=>P.bQ}, L:{c:'lac', max:()=>6}};
+
+// ---- Scene drawing ----
+const cv = $('scene'), cx = cv.getContext('2d');
+const heat = document.createElement('canvas'); heat.width = NX; heat.height = NY;
+const hx = heat.getContext('2d'), img = hx.createImageData(NX, NY);
+let W = 0, H = 0, cs = 1, frame = 0;
+const jit = Array.from({length: NC}, () => [Math.random()-.5, Math.random()-.5, Math.random()*6.28]);
+function layout(){
+  const dpr = devicePixelRatio || 1;
+  W = cv.clientWidth; H = cv.clientHeight; cs = W/NX;
+  cv.width = W*dpr; cv.height = H*dpr; cx.setTransform(dpr,0,0,dpr,0,0);
+}
+function circle(x, y, r, fill, stroke, lw){ cx.beginPath(); cx.arc(x, y, Math.max(r,.1), 0, 6.2832); if (fill){ cx.fillStyle = fill; cx.fill(); } if (stroke){ cx.strokeStyle = stroke; cx.lineWidth = lw || 1.2; cx.stroke(); } }
+function drawScene(){
+  const now = frame/60;
+  cx.fillStyle = col(C.tissue); cx.fillRect(0, 0, W, H);
+  const m = MAPS[map];
+  if (m){
+    const F = S[map], top = m.max(), c0 = C.tissue, c1 = C[m.c];
+    for (let i = 0; i < NC; i++){
+      const t = Math.min(1, F[i]/top)**.8, c = mix(c0, c1, t);
+      img.data[4*i] = c[0]; img.data[4*i+1] = c[1]; img.data[4*i+2] = c[2]; img.data[4*i+3] = 255;
+    }
+    hx.putImageData(img, 0, 0);
+    cx.imageSmoothingEnabled = true; cx.globalAlpha = .9; cx.drawImage(heat, 0, 0, W, H); cx.globalAlpha = 1;
+  }
+  // blood vessel with flowing red cells
+  const vw = cs*1.1, g = cx.createLinearGradient(0, 0, vw, 0);
+  g.addColorStop(0, col(mix(C.vessel, C.ink, .35))); g.addColorStop(.7, col(C.vessel)); g.addColorStop(1, col(mix(C.vessel, C.tissue, .4)));
+  cx.fillStyle = g; cx.fillRect(0, 0, vw, H);
+  for (let i = 0; i < 12; i++){ const y = ((i*H/12 + now*30) % (H+20)) - 10; cx.beginPath(); cx.ellipse(vw*(.35 + .3*(i%2)), y, vw*.22, vw*.14, 0, 0, 6.2832); cx.fillStyle = col(mix(C.vessel, C.ink, .2)); cx.fill(); }
+  // tumor cells: one blob per grid square, size by density
+  for (let i = 0; i < NC; i++){
+    const n = S.N[i]; if (n < .3) continue;
+    const x = (i % NX + .5 + jit[i][0]*.35)*cs, y = ((i/NX|0) + .5 + jit[i][1]*.35)*cs;
+    const r = cs*.62*Math.sqrt(n/P.cap)*(1 + .03*Math.sin(jit[i][2] + now*2));
+    circle(x, y, r, col(C.tumor, .92), col(C.nuc, .5), 1);
+    if (r > 3) circle(x + r*.15, y - r*.1, r*.42, col(C.nuc, .9));
+  }
+  // T cells
+  const r = Math.max(4, cs*.5);
+  for (const c of S.tc){
+    const x = c.x*cs, y = c.y*cs;
+    if (c.eff){
+      circle(x, y, r*2, col(C.tcell, .25*Math.min(1, c.fit*1.6)));
+      circle(x, y, r, col(mix(C.memory, C.tcell, Math.min(1, .35 + c.fit*1.3))), col(C.bg, .9), 1.4);
+      circle(x, y, r*.38, 'rgba(255,255,255,.75)');
+    } else {
+      const q = r*.85; cx.beginPath(); cx.roundRect(x-q, y-q, 2*q, 2*q, q*.3); cx.fillStyle = col(C.memory); cx.fill(); cx.strokeStyle = col(C.ink, .8); cx.lineWidth = 1.3; cx.stroke();  // square: shape, not only color
+    }
+  }
+}
+
+// ---- Charts ----
+function drawChart(canvas, lines, ymax, fmtY){
+  const dpr = devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight, x2 = canvas.getContext('2d');
+  if (canvas.width !== Math.round(w*dpr)){ canvas.width = w*dpr; canvas.height = h*dpr; }
+  x2.setTransform(dpr,0,0,dpr,0,0); x2.clearRect(0, 0, w, h);
+  const L = 44, B = 22, T = 8, Rr = 18, pw = w - L - Rr, ph = h - T - B;
+  const X = t => L + t/P.tEnd*pw, Y = v => T + ph - Math.min(v, ymax)/ymax*ph;
+  x2.font = '13px Inter, sans-serif'; x2.fillStyle = col(C.muted); x2.strokeStyle = col(C.line); x2.lineWidth = 1;
+  for (const f of [0, .5, 1]){ const y = Y(ymax*f); x2.beginPath(); x2.moveTo(L, y); x2.lineTo(w - Rr, y); x2.stroke(); x2.textAlign = 'right'; x2.textBaseline = 'middle'; x2.fillText(fmtY(ymax*f), L - 6, y); }
+  x2.textAlign = 'center'; x2.textBaseline = 'top';
+  for (const t of (w < 300 ? [0, 150, 300] : [0, 50, 100, 150, 200, 250, 300])) x2.fillText(t, X(t), h - B + 5);
+  for (const ln of lines){
+    const {t, v} = ln; if (!t || t.length < 2) continue;
+    x2.beginPath(); let pen = false;
+    t.forEach((tt, i) => { if (v[i] == null){ pen = false; return; } pen ? x2.lineTo(X(tt), Y(v[i])) : x2.moveTo(X(tt), Y(v[i])); pen = true; });
+    x2.setLineDash(ln.dash || []); x2.strokeStyle = ln.c; x2.lineWidth = ln.w || 2.5; x2.stroke(); x2.setLineDash([]);
+  }
+}
+function drawCharts(){
+  const nMax = Math.max(1500, Math.ceil(Math.max(...hist.N, ...(ghost ? ghost.N : [0]))/500)*500);
+  const nt = Math.max(5, val('nt'), ghost ? ghost.eff[0] + ghost.mem[0] : 0);
+  const gh = (k) => ghost ? [{t: ghost.t, v: ghost[k], c: col(C.muted, .8), dash: [5,4], w: 1.5}] : [];
+  drawChart($('cN'), [...gh('N'), {t: hist.t, v: hist.N, c: col(C.tumor)}], nMax, v => Math.round(v));
+  drawChart($('cG'), [...gh('G'), {t: hist.t, v: hist.G, c: col(C.glu)}], P.bG, v => v.toFixed(0));
+  drawChart($('cT'), [{t: hist.t, v: hist.mem, c: col(C.memory)}, {t: hist.t, v: hist.eff, c: col(C.tcell)}], nt, v => Math.round(v));
+}
+function readouts(){
+  const s = summary();
+  $('clock').textContent = 't = ' + S.t.toFixed(0);
+  $('vN').textContent = Math.round(s.N); $('vE').textContent = s.eff; $('vM').textContent = s.mem;
+  $('vG').textContent = s.G == null ? '–' : s.G.toFixed(1);
+  const map0 = MAPS[map]; $('scaleMax').textContent = map0 ? map0.max() : '';
+  let msg;
+  const prevN = hist.N.length > 6 ? hist.N[hist.N.length - 6] : s.N;
+  if (startN < .5 && s.N < .5) msg = 'No tumor: T cells patrol a well-fed tissue.';
+  else if (s.N < 1) msg = 'Tumor cleared by the T cells.';
+  else if (S.tc.length && s.eff === 0) msg = 'All T cells have switched to the quiet memory-like state: no fuel to fight. The tumor is escaping.';
+  else if (s.N < prevN - 1) msg = 'Effector T cells are winning: the tumor is shrinking.';
+  else msg = s.mem > 0 ? 'Nutrients are running low: some T cells are switching off. The tumor is growing.' : 'The tumor is growing while T cells move in.';
+  if (S.t >= P.tEnd - 1e-9) msg += ' Run finished.';
+  $('status').textContent = msg;
+}
+
+// ---- Control flow ----
+function reset(){
+  if (hist && hist.t.length > 2) ghost = hist;
+  init(); startN = summary().N;
+  hist = {t:[], N:[], G:[], eff:[], mem:[]}; record();
+  setPlay(playing || !reduce);
+}
+function setPlay(p){ playing = p; $('play').textContent = S && S.t >= P.tEnd - 1e-9 ? 'Replay' : (playing ? 'Pause' : 'Play'); }
+function outputs(){ ids.forEach(k => $('o_' + k).textContent = fmt[k]($(k).value)); }
+function markPreset(){ document.querySelectorAll('#presets button').forEach((b, i) => b.setAttribute('aria-pressed', ids.every(k => val(k) === PRESETS[i][1][k]))); }
+function loadPreset(i){ ids.forEach(k => $(k).value = PRESETS[i][1][k]); lacOn = true; $('lac').setAttribute('aria-pressed', true); $('lac').textContent = 'On'; outputs(); markPreset(); reset(); setPlay(true); }
+
+$('presets').innerHTML = PRESETS.map((p, i) => `<button data-i="${i}" aria-pressed="false">${p[0]}</button>`).join('');
+$('presets').addEventListener('click', e => { const b = e.target.closest('button'); if (b) loadPreset(+b.dataset.i); });
+ids.forEach(k => $(k).addEventListener('input', () => { outputs(); markPreset(); if (restartIds.includes(k)) reset(); }));
+$('play').addEventListener('click', () => { if (S.t >= P.tEnd - 1e-9){ reset(); setPlay(true); } else setPlay(!playing); });
+$('reset').addEventListener('click', reset);
+$('lac').addEventListener('click', () => { lacOn = !lacOn; $('lac').setAttribute('aria-pressed', lacOn); $('lac').textContent = lacOn ? 'On' : 'Off'; });
+document.querySelectorAll('[data-sp]').forEach(b => b.addEventListener('click', () => { speed = +b.dataset.sp; document.querySelectorAll('[data-sp]').forEach(x => x.setAttribute('aria-pressed', x === b)); }));
+document.querySelectorAll('[data-map]').forEach(b => b.addEventListener('click', () => { map = b.dataset.map; document.querySelectorAll('[data-map]').forEach(x => x.setAttribute('aria-pressed', x === b)); readColours(); $('scale').style.visibility = MAPS[map] ? 'visible' : 'hidden'; readouts(); }));
+
+function loop(){
+  frame++;
+  if (frame % 30 === 1) readColours();
+  if (playing && S.t < P.tEnd - 1e-9){
+    for (let i = 0; i < 2*speed && S.t < P.tEnd - 1e-9; i++){ step(); if (Math.round(S.t/P.dt) % 10 === 0) record(); }
+    if (S.t >= P.tEnd - 1e-9) setPlay(false);
+  }
+  drawScene();
+  if (frame % 4 === 0) drawCharts();
+  if (frame % 6 === 0) readouts();
+  requestAnimationFrame(loop);
+}
+
+readColours();
+ids.forEach(k => $(k).value = PRESETS[1][1][k]);
+outputs(); markPreset();
+layout(); reset(); drawCharts(); readouts();
+new ResizeObserver(() => { layout(); drawCharts(); }).observe($('sceneBox'));
+new ResizeObserver(drawCharts).observe($('cN').parentNode);
+requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starved in the Tumor (simple)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday learning: a PhET-style lab bench, friendly but exact
+   IDEA an H&E-stained tissue slide under the microscope, brought to life
+   PICTURE live tissue: vessel feeding glucose, purple tumor cluster, blue T cells that dim when starved
+   COLOUR white bench, eosin-pink tissue, hematoxylin purple, T-cell blue, glucose amber, drug teal
+   TYPE Lexend for titles + Inter for text
+   LAYOUT laptop: scene left with controls panel right, live graphs in a full row below; phone: title, scene, controls, graphs */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#120c16);--ink:light-dark(#1d1422,#f2eaf4);--muted:light-dark(#66586d,#b6a8bd);
+--panel:light-dark(#f8f3f9,#1b131f);--line:light-dark(#e6d9e9,#38293e);
+--tissue:light-dark(#fbe4eb,#2a1724);--tissue2:light-dark(#f3c9d7,#3d2134);
+--tumor:light-dark(#6a2c91,#8e4fb8);--nuc:light-dark(#330f4d,#4d2069);--tcell:light-dark(#3d8bff,#6fc0ff);
+--starved:light-dark(#9a96a6,#6c6775);--glu:light-dark(#e09a00,#ffc23d);--vessel:light-dark(#c1121f,#e5484d);
+--drug:light-dark(#0e9a87,#33d6ba);--accent:light-dark(#6a2c91,#c99be8)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(20px,3vw,40px) max(4vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+h1,h2,h3{font-family:Lexend,Inter,sans-serif;letter-spacing:-.02em;line-height:1.08;margin:0}
+h1{font-size:clamp(32px,4.4vw,48px);text-wrap:balance}
+h2{font-size:24px;margin-bottom:10px}
+h3{font-size:17px;margin-bottom:6px}
+.top{padding-bottom:12px}
+.top .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px 32px}
+.top p{margin:8px 0 0;max-width:62ch;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 14px;white-space:nowrap}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;padding-top:8px}
+.scene{position:relative;height:clamp(320px,40vw,500px);border-radius:16px;overflow:hidden;background:var(--tissue);box-shadow:inset 0 0 0 1px var(--line)}
+.scene canvas{position:absolute;inset:0;width:100%;height:100%}
+.clock{position:absolute;right:12px;top:10px;font:600 15px Lexend,sans-serif;background:color-mix(in srgb,var(--bg) 80%,transparent);padding:4px 10px;border-radius:8px;font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9em,1fr));gap:10px;margin-top:12px}
+.stat{background:var(--panel);border-radius:12px;padding:10px 14px}
+.stat b{display:block;font:600 clamp(22px,2.4vw,28px) Lexend,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat span{font-size:13px;color:var(--muted)}
+.status{margin:12px 0 0;font-weight:600;min-height:1.6em}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend svg{width:18px;height:18px;flex:none}
+.ctrl{background:var(--panel);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px;align-self:start}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+button{font:600 15px Inter,sans-serif;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--tcell);outline-offset:2px}
+button.main{background:var(--accent);color:var(--bg);border-color:var(--accent);flex:1}
+button[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 16%,var(--bg));border-color:var(--accent)}
+.seg button{padding:0 12px}
+.presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.presets button{font-size:14px;font-weight:500;text-align:left;padding:6px 12px;line-height:1.25}
+.presets button:last-child{grid-column:1/-1}
+.lbl{font-size:13px;font-weight:600;color:var(--muted)}
+.sl label{display:flex;justify-content:space-between;gap:8px;font-size:15px;font-weight:500}
+.sl output{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.sl small{display:block;font-size:13px;color:var(--muted)}
+input[type=range]{width:100%;height:44px;margin:0;accent-color:var(--accent);cursor:pointer}
+.charts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-top:0}
+.chart header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:15px;font-weight:600}
+.chart header span{font-size:13px;color:var(--muted);font-weight:500}
+.fig{position:relative;height:180px;margin-top:4px}
+.fig canvas{position:absolute;inset:0;width:100%;height:100%}
+.about{background:var(--panel);margin-top:12px}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.about p,.about li{max-width:68ch;margin:0 0 10px}
+.about ol{padding-left:20px;margin:0}
+.eq{font:14px/1.7 ui-monospace,Menlo,monospace;background:var(--bg);border-radius:10px;padding:10px 12px;overflow-x:auto;white-space:pre;margin:0 0 10px}
+.foot{font-size:13px;color:var(--muted)}
+.pal{display:none}
+@media(max-width:900px){.lab{grid-template-columns:minmax(0,1fr)}.cols{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){.charts{grid-template-columns:minmax(0,1fr)}.fig{height:150px}}
+</style>
+</head>
+<body>
+<header class="band top"><div class="wrap">
+  <div>
+    <h1>Starved in the Tumor: simple model</h1>
+    <p>Tumor cells and killer T cells share one supply of glucose. Watch what happens to the T cells when the tumor takes most of it, and try treatments that change the balance.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><div class="note">Simplified illustrative model, not experimental data</div><a href="index.html" style="color:var(--accent);font-weight:600">Open the spatial model (version 2)</a></div>
+</div></header>
+
+<main class="band" style="padding-top:8px"><div class="wrap lab">
+  <section>
+    <div class="scene" id="sceneBox"><canvas id="scene" aria-label="Animated tissue: blood vessel, glucose, tumor cells and T cells"></canvas><div class="clock" id="clock">t = 0</div></div>
+    <div class="stats">
+      <div class="stat"><span>Glucose in tissue</span><b id="vG">0</b></div>
+      <div class="stat"><span>Tumor cells</span><b id="vN">0</b></div>
+      <div class="stat"><span>T-cell activity</span><b id="vE">0%</b></div>
+    </div>
+    <p class="status" id="status" aria-live="polite"></p>
+    <div class="legend">
+      <span><svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="4" fill="var(--glu)"/></svg>Glucose</span>
+      <span><svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="var(--tumor)"/><circle cx="10" cy="8" r="3.5" fill="var(--nuc)"/></svg>Tumor cell</span>
+      <span><svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="var(--tcell)"/><circle cx="9" cy="9" r="3" fill="var(--bg)" opacity=".7"/></svg>Active T cell</span>
+      <span><svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="var(--starved)"/><circle cx="9" cy="9" r="3" fill="var(--bg)" opacity=".7"/></svg>Starved T cell</span>
+      <span><svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke="var(--drug)" stroke-width="2.5"/></svg>Drug blocking glucose uptake</span>
+      <span><svg viewBox="0 0 18 18"><rect x="5" y="0" width="8" height="18" rx="3" fill="var(--vessel)"/></svg>Blood vessel</span>
+    </div>
+  </section>
+
+  <aside class="ctrl" aria-label="Controls">
+    <div class="row">
+      <button class="main" id="play">Pause</button>
+      <button id="reset">Reset</button>
+    </div>
+    <div class="row seg" role="group" aria-label="Speed">
+      <span class="lbl" style="align-self:center;margin-right:4px">Speed</span>
+      <button data-sp="1" aria-pressed="true">1×</button><button data-sp="2" aria-pressed="false">2×</button><button data-sp="4" aria-pressed="false">4×</button>
+    </div>
+    <div>
+      <div class="lbl" style="margin-bottom:6px">Scenarios</div>
+      <div class="presets" id="presets"></div>
+    </div>
+    <div class="sl"><label for="n0">Starting tumor size <output id="o_n0"></output></label><input type="range" id="n0" min="0" max="100" step="1"><small>Changing this restarts the run</small></div>
+    <div class="sl"><label for="tinh">Drug: blocks tumor glucose uptake <output id="o_tinh"></output></label><input type="range" id="tinh" min="0" max="90" step="5"></div>
+    <div class="sl"><label for="tcinh">Drug side effect on T cells <output id="o_tcinh"></output></label><input type="range" id="tcinh" min="0" max="90" step="5"></div>
+    <div class="sl"><label for="nt">Number of T cells <output id="o_nt"></output></label><input type="range" id="nt" min="0" max="20" step="1"></div>
+    <div class="sl"><label for="sup">Glucose supply from blood <output id="o_sup"></output></label><input type="range" id="sup" min="0.5" max="2" step="0.1"></div>
+  </aside>
+</div></main>
+
+<section class="band" style="padding-top:0" aria-label="Live graphs"><div class="wrap charts">
+  <div class="chart"><header>Glucose in tissue <span>dashed: previous run</span></header><div class="fig"><canvas id="cG"></canvas></div></div>
+  <div class="chart"><header>Tumor cells <span>dashed: previous run</span></header><div class="fig"><canvas id="cN"></canvas></div></div>
+  <div class="chart"><header>T-cell effector activity <span>dashed: previous run</span></header><div class="fig"><canvas id="cE"></canvas></div></div>
+</div></section>
+
+<section class="band about"><div class="wrap cols">
+  <div>
+    <h2>Try these experiments</h2>
+    <ol>
+      <li><b>Find the escape point.</b> With no drug, raise the starting tumor size from 10 to 30 one step at a time. Above roughly 20, the tumor uses up enough glucose to switch the T cells off, and it escapes.</li>
+      <li><b>Find the weakest drug that works.</b> Load "Large tumor" and slowly raise the tumor-blocking drug. What is the lowest dose that lets the T cells clear the tumor?</li>
+      <li><b>Test selectivity.</b> Load "Large tumor + selective drug", then raise the side effect on T cells. At what point does the treatment stop working, and why?</li>
+    </ol>
+  </div>
+  <div>
+    <h2>How the model works</h2>
+    <p>Three quantities change over time: glucose <i>G</i>, tumor cells <i>N</i>, and T-cell activity <i>E</i> (0 to 1). The number of T cells <i>T</i> is fixed. Each cell type's glucose use saturates as <i>G</i>/(<i>K</i> + <i>G</i>); tumor cells have the lower <i>K</i>, so they keep feeding when glucose is scarce.</p>
+<pre class="eq">dG/dt = supply − 0.1·G
+        − 0.05·f_tumor(G)·N
+        − 0.02·f_T(G)·T
+dN/dt = 0.3·f_tumor(G)·N·(1 − N/200)
+        − 0.04·E·T·N
+E     = f_T(G)</pre>
+    <p>A drug multiplies <i>f</i> by (1 − block). The animation shows the same numbers: each glucose dot is about 1/8 of a unit, each purple cell is one tumor cell unit. All values are arbitrary units chosen to show behaviour.</p>
+  </div>
+  <div>
+    <h2>Where this comes from</h2>
+    <p>Based on my published review <b>"Immunometabolism: How Metabolic Reprogramming Controls Immune Cell Activation and Function"</b> (#93). It describes how effector T cells rely on aerobic glycolysis, and how tumor cells in the tumor microenvironment compete for glucose and suppress effector T-cell glycolysis (Section 6.4).</p>
+    <p>The tumor's stronger glucose uptake is a simple stand-in for the Warburg effect discussed in my paper <b>"Metabolic Reprogramming in Cancer Cells"</b> (#94).</p>
+    <p>The equations, numbers, escape threshold and drug experiments are my own modelling choices, not results from the papers. This is a teaching model: it leaves out lactate, hypoxia, amino acids, T-cell proliferation and space.</p>
+    <p class="foot">Alper Öztürk · Python version: tme_glucose.py in the project repository</p>
+  </div>
+</div></section>
+
+<div class="pal" id="pal"><i data-c="ink" style="color:var(--ink)"></i><i data-c="muted" style="color:var(--muted)"></i><i data-c="line" style="color:var(--line)"></i><i data-c="bg" style="color:var(--bg)"></i><i data-c="tissue" style="color:var(--tissue)"></i><i data-c="tissue2" style="color:var(--tissue2)"></i><i data-c="tumor" style="color:var(--tumor)"></i><i data-c="nuc" style="color:var(--nuc)"></i><i data-c="tcell" style="color:var(--tcell)"></i><i data-c="starved" style="color:var(--starved)"></i><i data-c="glu" style="color:var(--glu)"></i><i data-c="vessel" style="color:var(--vessel)"></i><i data-c="drug" style="color:var(--drug)"></i></div>
+
+<script>
+{
+const $ = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---- Model: same equations and defaults as tme_glucose.py ----
+const P = {washout:.1, tVmax:.05, tKm:1, growth:.3, cap:200, tcVmax:.02, tcKm:3, kill:.04, dt:.05, tEnd:300};
+const PRESETS = [
+  ['No tumor',          {n0:0,  tinh:0,  tcinh:0,  nt:10, sup:1}],
+  ['Small tumor',       {n0:5,  tinh:0,  tcinh:0,  nt:10, sup:1}],
+  ['Large tumor',       {n0:60, tinh:0,  tcinh:0,  nt:10, sup:1}],
+  ['Large tumor + selective drug',{n0:60, tinh:50, tcinh:0,  nt:10, sup:1}],
+  ['Large tumor + non-selective drug', {n0:60, tinh:50, tcinh:50, nt:10, sup:1}]
+];
+const ids = ['n0','tinh','tcinh','nt','sup'];
+const fmt = {n0:v=>v, tinh:v=>v+'%', tcinh:v=>v+'%', nt:v=>v, sup:v=>(+v).toFixed(1)+'×'};
+const val = k => +$(k).value;
+const sat = (g,k) => g/(k+g);
+
+let S, hist, ghost = null, playing = !reduce, speed = 1, lastDN = 0, startN = 0;
+
+function rates(G, N){
+  const tf = (1 - val('tinh')/100) * sat(G, P.tKm);
+  const cf = (1 - val('tcinh')/100) * sat(G, P.tcKm);
+  const T = val('nt');
+  const tumUp = P.tVmax*tf*N, tcUp = P.tcVmax*cf*T, wash = P.washout*G;
+  const dG = val('sup') - wash - tumUp - tcUp;
+  const dN = P.growth*tf*N*(1 - N/P.cap) - P.kill*cf*T*N;
+  return {E:cf, dG, dN, tumUp, tcUp, wash};
+}
+function step(){
+  const r = rates(S.G, S.N);
+  S.E = r.E; lastDN = r.dN; S.up = r;
+  S.G = Math.max(S.G + r.dG*P.dt, 0);
+  S.N = Math.max(S.N + r.dN*P.dt, 0);
+  S.t += P.dt; S.k++;
+  if (S.k % 10 === 0) { hist.t.push(S.t); hist.G.push(S.G); hist.N.push(S.N); hist.E.push(rates(S.G,S.N).E); }
+}
+
+// ---- Colours from CSS (works in light and dark) ----
+let C = {};
+function readColours(){
+  document.querySelectorAll('#pal i').forEach(i => { C[i.dataset.c] = getComputedStyle(i).color.match(/[\d.]+/g).slice(0,3).map(Number); });
+}
+const col = (c, a=1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const mix = (a, b, t) => a.map((v,i) => Math.round(v*(1-t) + b[i]*t));
+
+// ---- Scene geometry ----
+const cv = $('scene'), cx = cv.getContext('2d');
+let W = 0, H = 0, R = 8, VW = 30, CX = 0, CY = 0, slots = [], fibres = [];
+let seed = 7; const rnd = () => (seed = seed*16807 % 2147483647) / 2147483647;
+function layout(){
+  const dpr = devicePixelRatio || 1, oW = W, oH = H;
+  W = cv.clientWidth; H = cv.clientHeight;
+  if (oW > 50 && oH > 50) for (const o of [...tcs, ...dots]) { o.x *= W/oW; o.y *= H/oH; }
+  cv.width = W*dpr; cv.height = H*dpr; cx.setTransform(dpr,0,0,dpr,0,0);
+  R = Math.max(5, Math.min(W*.8, H)*.024);
+  VW = Math.max(24, W*.055);
+  CX = VW + (W - VW)*.6; CY = H*.5;
+  seed = 7; slots = [];
+  for (let k = 0; k < 200; k++){
+    const a = k*2.39996, d = R*1.08*Math.sqrt(k + .5);
+    slots.push({x: CX + d*Math.cos(a) + (rnd()-.5)*R*.3, y: CY + d*Math.sin(a) + (rnd()-.5)*R*.3, ph: rnd()*6.28});
+  }
+  fibres = Array.from({length: 26}, () => ({x: VW + rnd()*(W-VW), y: rnd()*H, a: rnd()*3.14, l: 40 + rnd()*90}));
+  for (const c of tcs) { c.x = Math.min(Math.max(c.x, VW+R), W-R); c.y = Math.min(Math.max(c.y, R), H-R); }
+}
+
+// ---- Animated objects ----
+let cells = [], dying = [], tcs = [], dots = [], flights = [], frame = 0;
+const clusterR = () => R*1.08*Math.sqrt(cells.length) + R;
+function syncTumor(){
+  const want = Math.min(200, Math.round(S.N));
+  while (cells.length < want) cells.push({k: cells.length, s: reduce ? 1 : 0});
+  while (cells.length > want){
+    const c = cells.pop(), p = slots[c.k];
+    dying.push({x:p.x, y:p.y, a:1});
+    let best = null, bd = 1e9;
+    for (const t of tcs){ const d = Math.hypot(t.x-p.x, t.y-p.y); if (d < bd){ bd = d; best = t; } }
+    if (best){ best.flash = 1; best.tx = p.x; best.ty = p.y; }
+  }
+}
+function syncTcells(){
+  const want = val('nt');
+  if (W < 50) return;
+  while (tcs.length < want) tcs.push({x: VW + R*2 + rnd()*(W*.35), y: R + rnd()*(H-2*R), vx:0, vy:0, flash:0});
+  while (tcs.length > want) tcs.pop();
+}
+function syncGlucose(){
+  const want = Math.round(S.G*8);
+  for (let i = 0; i < 4 && dots.length < want; i++)
+    dots.push({x: VW + 2, y: rnd()*H, vx: .4 + rnd()*.5, vy: (rnd()-.5)*.4});
+  for (let i = 0; i < 4 && dots.length > want; i++){
+    const u = S.up || {tumUp:0, tcUp:0, wash:1};
+    const tot = u.tumUp + u.tcUp + u.wash || 1, r = rnd()*tot;
+    let target = null;
+    if (r < u.tumUp && cells.length){ const p = slots[cells[Math.floor(rnd()*cells.length)].k]; target = {x:p.x, y:p.y}; }
+    else if (r < u.tumUp + u.tcUp && tcs.length){ target = tcs[Math.floor(rnd()*tcs.length)]; }
+    let idx = Math.floor(rnd()*dots.length);
+    if (target){ let bd = 1e9; for (let j = 0; j < 6; j++){ const q = Math.floor(rnd()*dots.length), d = Math.hypot(dots[q].x-target.x, dots[q].y-target.y); if (d < bd){ bd = d; idx = q; } } }
+    const d = dots.splice(idx, 1)[0];
+    if (!reduce) flights.push({x:d.x, y:d.y, t:0, to: target, fade: !target});
+  }
+}
+function move(){
+  const E = S.E;
+  for (const d of dots){
+    d.vx = (d.vx + (rnd()-.5)*.25)*.97 + .012; d.vy = (d.vy + (rnd()-.5)*.25)*.97;
+    d.x += d.vx; d.y += d.vy;
+    if (d.x < VW+2){ d.x = VW+2; d.vx = Math.abs(d.vx); } if (d.x > W-3){ d.x = W-3; d.vx = -Math.abs(d.vx); }
+    if (d.y < 3 || d.y > H-3){ d.vy = -d.vy; d.y = Math.min(Math.max(d.y,3),H-3); }
+  }
+  const edge = clusterR() + R*1.5;
+  for (const c of tcs){
+    let ax = (rnd()-.5)*.5, ay = (rnd()-.5)*.5;
+    if (cells.length){ const dx = CX-c.x, dy = CY-c.y, d = Math.hypot(dx,dy) || 1, pull = (d > edge ? .09 : -.12)*(.2 + E); ax += dx/d*pull; ay += dy/d*pull; }
+    c.vx = (c.vx + ax)*.9; c.vy = (c.vy + ay)*.9;
+    const sp = .35 + 1.8*E, v = Math.hypot(c.vx, c.vy); if (v > sp){ c.vx *= sp/v; c.vy *= sp/v; }
+    c.x = Math.min(Math.max(c.x + c.vx, VW+R*1.3), W-R*1.3); c.y = Math.min(Math.max(c.y + c.vy, R*1.3), H-R*1.3);
+    c.flash *= .9;
+  }
+  for (const c of cells) c.s = Math.min(1, c.s + .06);
+  for (const d of dying) d.a -= .035; dying = dying.filter(d => d.a > 0);
+  for (const f of flights) f.t += 1/16; flights = flights.filter(f => f.t < 1);
+}
+
+// ---- Drawing ----
+function circle(x, y, r, fill, stroke, lw){ cx.beginPath(); cx.arc(x, y, Math.max(r,.1), 0, 6.2832); if (fill){ cx.fillStyle = fill; cx.fill(); } if (stroke){ cx.strokeStyle = stroke; cx.lineWidth = lw || 1.5; cx.stroke(); } }
+function drawScene(){
+  const E = S.E, now = frame/60, tinh = val('tinh')/100, tcinh = val('tcinh')/100;
+  cx.fillStyle = col(C.tissue); cx.fillRect(0, 0, W, H);
+  cx.strokeStyle = col(C.tissue2, .9); cx.lineWidth = 3; cx.lineCap = 'round';
+  for (const f of fibres){ cx.beginPath(); cx.moveTo(f.x, f.y); cx.quadraticCurveTo(f.x + Math.cos(f.a)*f.l*.5 + 14, f.y + Math.sin(f.a)*f.l*.5 - 14, f.x + Math.cos(f.a)*f.l, f.y + Math.sin(f.a)*f.l); cx.stroke(); }
+  // blood vessel with flowing red cells
+  const g = cx.createLinearGradient(0, 0, VW, 0); g.addColorStop(0, col(mix(C.vessel, C.ink, .35))); g.addColorStop(.6, col(C.vessel)); g.addColorStop(1, col(mix(C.vessel, C.tissue, .4)));
+  cx.fillStyle = g; cx.fillRect(0, 0, VW, H);
+  for (let i = 0; i < 12; i++){ const y = ((i*H/12 + now*30) % (H+20)) - 10; cx.beginPath(); cx.ellipse(VW*(.35 + .3*(i%2)), y, VW*.2, VW*.12, 0, 0, 6.2832); cx.fillStyle = col(mix(C.vessel, C.ink, .2)); cx.fill(); }
+  // glucose
+  for (const d of dots) circle(d.x, d.y, R*.32, col(C.glu));
+  for (const f of flights){
+    const e = f.t*f.t*(3 - 2*f.t), x = f.to ? f.x + (f.to.x - f.x)*e : f.x, y = f.to ? f.y + (f.to.y - f.y)*e : f.y;
+    circle(x, y, R*.32*(1 - f.t*.7), col(C.glu, f.fade ? 1 - f.t : 1));
+  }
+  // dying tumor cells
+  for (const d of dying) circle(d.x, d.y, R*(.6 + .4*d.a), col(C.starved, d.a*.8));
+  // tumor cells
+  for (const c of cells){
+    const p = slots[c.k], r = R*c.s*(1 + .04*Math.sin(p.ph + now*2));
+    circle(p.x, p.y, r, col(C.tumor, .9), col(C.nuc, .6), 1);
+    circle(p.x + r*.15, p.y - r*.1, r*.45, col(C.nuc, .9));
+    if (tinh > 0) circle(p.x, p.y, r + 1.5, null, col(C.drug, .25 + .75*tinh), 2);
+  }
+  // T cells
+  for (const c of tcs){
+    if (c.flash > .08 && c.tx != null){ cx.beginPath(); cx.moveTo(c.x, c.y); cx.lineTo(c.tx, c.ty); cx.strokeStyle = col(C.tcell, c.flash); cx.lineWidth = 2.5; cx.stroke(); circle(c.tx, c.ty, R*.9*(1.4 - c.flash), null, col(C.tcell, c.flash), 2); }
+    if (E > .05) circle(c.x, c.y, R*1.9, col(C.tcell, .22*E));
+    circle(c.x, c.y, R*1.05, col(mix(C.starved, C.tcell, Math.min(1, E*1.25))), col(C.ink, .25), 1);
+    circle(c.x, c.y, R*.4, col(C.bg, .7));
+    if (tcinh > 0) circle(c.x, c.y, R*1.05 + 2, null, col(C.drug, .25 + .75*tcinh), 2);
+  }
+}
+function drawChart(canvas, key, colour, ymax, fmtY){
+  const dpr = devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight, x2 = canvas.getContext('2d');
+  if (canvas.width !== w*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+  x2.setTransform(dpr,0,0,dpr,0,0); x2.clearRect(0, 0, w, h);
+  const L = 40, B = 22, T = 8, Rr = 10, pw = w - L - Rr, ph = h - T - B;
+  const X = t => L + t/P.tEnd*pw, Y = v => T + ph - Math.min(v, ymax)/ymax*ph;
+  x2.font = '13px Inter, sans-serif'; x2.fillStyle = col(C.muted); x2.strokeStyle = col(C.line); x2.lineWidth = 1;
+  for (const f of [0, .5, 1]){ const y = Y(ymax*f); x2.beginPath(); x2.moveTo(L, y); x2.lineTo(w - Rr, y); x2.stroke(); x2.textAlign = 'right'; x2.textBaseline = 'middle'; x2.fillText(fmtY(ymax*f), L - 6, y); }
+  x2.textAlign = 'center'; x2.textBaseline = 'top';
+  for (const t of (w < 300 ? [0, 150, 300] : [0, 50, 100, 150, 200, 250, 300])) x2.fillText(t, X(t), h - B + 5);
+  const line = (hs, c, dash, lw) => { if (!hs || hs.t.length < 2) return; x2.beginPath(); hs.t.forEach((t, i) => i ? x2.lineTo(X(t), Y(hs[key][i])) : x2.moveTo(X(t), Y(hs[key][i]))); x2.setLineDash(dash); x2.strokeStyle = c; x2.lineWidth = lw; x2.stroke(); x2.setLineDash([]); };
+  line(ghost, col(C.muted, .8), [5, 4], 1.5);
+  line(hist, col(colour), [], 2.5);
+  const n = hist.t.length - 1; if (n >= 0){ x2.beginPath(); x2.arc(X(hist.t[n]), Y(hist[key][n]), 4, 0, 6.2832); x2.fillStyle = col(colour); x2.fill(); }
+}
+function drawCharts(){
+  const gmax = Math.max(12, val('sup')/P.washout*1.15);
+  const nmax = Math.max(100, Math.ceil(Math.max(...hist.N, ...(ghost ? ghost.N : [0]))/50)*50);
+  drawChart($('cG'), 'G', C.glu, gmax, v => v.toFixed(0));
+  drawChart($('cN'), 'N', C.tumor, nmax, v => v.toFixed(0));
+  drawChart($('cE'), 'E', C.tcell, 1, v => Math.round(v*100) + '%');
+}
+function readouts(){
+  $('clock').textContent = 't = ' + S.t.toFixed(0);
+  $('vG').textContent = S.G.toFixed(1); $('vN').textContent = S.N.toFixed(S.N < 10 ? 1 : 0); $('vE').textContent = Math.round(S.E*100) + '%';
+  let msg;
+  if (startN === 0 && S.N < .5) msg = 'No tumor: T cells have plenty of glucose.';
+  else if (S.N < .5) msg = 'Tumor cleared by the T cells.';
+  else if (S.E < .3) msg = 'T cells are starved: too little glucose left to fight. The tumor is escaping.';
+  else if (lastDN < 0) msg = 'T cells are winning: the tumor is shrinking.';
+  else msg = 'The tumor is growing.';
+  if (S.t >= P.tEnd - 1e-9) msg += ' Run finished.';
+  $('status').textContent = msg;
+}
+
+// ---- Control flow ----
+function reset(){
+  if (hist && hist.t.length > 2) ghost = hist;
+  startN = val('n0');
+  S = {t:0, k:0, G:10, N:startN, E:0, up:null};
+  S.E = rates(S.G, S.N).E;
+  hist = {t:[0], G:[S.G], N:[S.N], E:[S.E]};
+  cells = []; dying = []; flights = [];
+  const want = Math.min(200, Math.round(S.N)); for (let i = 0; i < want; i++) cells.push({k:i, s:1});
+  seed = 11; dots = Array.from({length: Math.round(S.G*8)}, () => ({x: VW + rnd()*(W-VW), y: rnd()*H, vx:(rnd()-.5)*.4, vy:(rnd()-.5)*.4}));
+  setPlay(!reduce || playing);
+}
+function setPlay(p){
+  playing = p;
+  $('play').textContent = S && S.t >= P.tEnd - 1e-9 ? 'Replay' : (playing ? 'Pause' : 'Play');
+}
+function outputs(){ ids.forEach(k => $('o_' + k).textContent = fmt[k]($(k).value)); }
+function markPreset(){
+  document.querySelectorAll('#presets button').forEach((b, i) => b.setAttribute('aria-pressed', ids.every(k => val(k) === PRESETS[i][1][k])));
+}
+function loadPreset(i){ ids.forEach(k => $(k).value = PRESETS[i][1][k]); outputs(); markPreset(); reset(); setPlay(true); }
+
+$('presets').innerHTML = PRESETS.map((p, i) => `<button data-i="${i}" aria-pressed="false">${p[0]}</button>`).join('');
+$('presets').addEventListener('click', e => { const b = e.target.closest('button'); if (b) loadPreset(+b.dataset.i); });
+ids.forEach(k => $(k).addEventListener('input', () => { outputs(); markPreset(); if (k === 'n0') reset(); if (k === 'sup' || k === 'nt') drawCharts(); }));
+$('play').addEventListener('click', () => { if (S.t >= P.tEnd - 1e-9){ reset(); setPlay(true); } else setPlay(!playing); });
+$('reset').addEventListener('click', () => { reset(); });
+document.querySelectorAll('[data-sp]').forEach(b => b.addEventListener('click', () => { speed = +b.dataset.sp; document.querySelectorAll('[data-sp]').forEach(x => x.setAttribute('aria-pressed', x === b)); }));
+
+function loop(){
+  frame++;
+  if (frame % 30 === 1) readColours();
+  if (playing && S.t < P.tEnd - 1e-9){ for (let i = 0; i < 3*speed && S.t < P.tEnd - 1e-9; i++) step(); if (S.t >= P.tEnd - 1e-9) setPlay(false); }
+  S.E = rates(S.G, S.N).E; S.up = rates(S.G, S.N);
+  syncTumor(); syncTcells(); syncGlucose();
+  if (playing || !reduce) move();
+  drawScene();
+  if (frame % 3 === 0) drawCharts();
+  if (frame % 6 === 0) readouts();
+  requestAnimationFrame(loop);
+}
+
+readColours();
+ids.forEach(k => $(k).value = PRESETS[2][1][k]);
+outputs(); markPreset();
+layout(); reset(); drawCharts(); readouts();
+new ResizeObserver(() => { layout(); drawCharts(); }).observe($('sceneBox'));
+new ResizeObserver(drawCharts).observe($('cG').parentNode);
+requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
