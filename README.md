@@ -4,6 +4,12 @@
 
 **Author:** Alper Öztürk
 
+**Related papers:**
+
+Öztürk, A. (2026). Immunometabolism: How Metabolic Reprogramming Controls Immune Cell Activation and Function. *Next Frontier For Life Sciences and AI*, 10(1), 1–10. https://doi.org/10.62802/nflsai.93
+
+Öztürk, A. (2026). Metabolic Reprogramming in Cancer Cells: Investigating How Altered Glucose, Lipid, and Amino Acid Metabolism Supports Tumor Growth. *Next Frontier For Life Sciences and AI*, 10(1), 1–9. https://doi.org/10.62802/nflsai.94
+
 **Live simulation:** https://officeofalper.github.io/tme-glucose-competition/web/ (spatial model, version 2) and https://officeofalper.github.io/tme-glucose-competition/web/simple.html (simple model, version 1). No installation needed; see [Section 6](#6-interactive-versions).
 
 The repository contains two models of increasing realism:
@@ -23,8 +29,8 @@ The repository contains two models of increasing realism:
 
 | Paper | What the paper says | How this repository uses it |
 |---|---|---|
-| **#93: "Immunometabolism: How Metabolic Reprogramming Controls Immune Cell Activation and Function"** <!-- add link --> | Effector T cells rely on aerobic glycolysis and glutaminolysis to proliferate and produce cytokines, while memory and regulatory T cells rely on fatty acid oxidation (FAO) and OXPHOS, with AMPK favouring the oxidative state (Sections 2.3, 6.1, Table 1). In the tumor microenvironment (TME), tumor cells compete for glucose and amino acids, build up lactate and create hypoxia, which together suppress effector T-cell glycolysis; targeting glycolytic enzymes or amino-acid transporters can enhance antitumor responses in preclinical models (Section 6.4, summarizing Hu et al., 2024). | T-cell function depends on the glucose and glutamine they can get, and is reduced by lactate. T cells that run out of fuel switch from a glycolytic effector state to a quiet, oxidative memory-like state. Drugs block tumor glucose and/or glutamine uptake. |
-| **#94: "Metabolic Reprogramming in Cancer Cells"** <!-- add link --> | Cancer cells reprogram their metabolism, including the Warburg effect (high glucose uptake and lactate production even with oxygen) and glutaminolysis. | Tumor cells take up glucose and glutamine with higher affinity than T cells and convert much of the glucose into lactate. |
+| **#93: "Immunometabolism: How Metabolic Reprogramming Controls Immune Cell Activation and Function"** ([DOI](https://doi.org/10.62802/nflsai.93)) | Effector T cells rely on aerobic glycolysis and glutaminolysis to proliferate and produce cytokines, while memory and regulatory T cells rely on fatty acid oxidation (FAO) and OXPHOS, with AMPK favouring the oxidative state (Sections 2.3, 6.1, Table 1). In the tumor microenvironment (TME), tumor cells compete for glucose and amino acids, build up lactate and create hypoxia, which together suppress effector T-cell glycolysis; targeting glycolytic enzymes or amino-acid transporters can enhance antitumor responses in preclinical models (Section 6.4, summarizing Hu et al., 2024). | T-cell function depends on the glucose and glutamine they can get, and is reduced by lactate. T cells that run out of fuel switch from a glycolytic effector state to a quiet, oxidative memory-like state. Drugs block tumor glucose and/or glutamine uptake. |
+| **#94: "Metabolic Reprogramming in Cancer Cells"** ([DOI](https://doi.org/10.62802/nflsai.94)) | Cancer cells reprogram their metabolism, including the Warburg effect (high glucose uptake and lactate production even with oxygen) and glutaminolysis. | Tumor cells take up glucose and glutamine with higher affinity than T cells and convert much of the glucose into lactate. |
 
 **What comes from my papers and what does not.** The qualitative ideas above come from the literature I reviewed. Everything else is **my own modelling choice** and is not reported in my papers: the equations, all parameter values, the escape threshold, the inhibitor experiments, the spatial layout, and in particular the rule that a starved effector T cell *switches to a memory-like state* (my paper describes effector and memory cells using different metabolic programs; it does not say that starvation converts one into the other).
 
