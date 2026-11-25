@@ -1,0 +1,34 @@
+[
+ {
+  "setting": "default: tumour 1.0 / T cell 3.0",
+  "tumor_km": 1.0,
+  "tcell_km": 3.0,
+  "first_escape": 22,
+  "n_escaping": 74,
+  "max_final": 98.99
+ },
+ {
+  "setting": "equal, both 1.0 (tumour's value)",
+  "tumor_km": 1.0,
+  "tcell_km": 1.0,
+  "first_escape": null,
+  "n_escaping": 0,
+  "max_final": 0.03
+ },
+ {
+  "setting": "equal, both 3.0 (T cell's value)",
+  "tumor_km": 3.0,
+  "tcell_km": 3.0,
+  "first_escape": null,
+  "n_escaping": 0,
+  "max_final": 0.15
+ },
+ {
+  "setting": "reversed: tumour 3.0 / T cell 1.0",
+  "tumor_km": 3.0,
+  "tcell_km": 1.0,
+  "first_escape": null,
+  "n_escaping": 0,
+  "max_final": 0.0
+ }
+]

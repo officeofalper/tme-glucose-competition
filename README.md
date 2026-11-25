@@ -71,6 +71,29 @@ Drugs multiply $f_{\text{tumor}}$ and/or $f_{\text{T}}$ by $(1 - \text{inhibitio
 
 **Selectivity.** When the inhibitor also blocks T-cell glycolysis, its benefit shrinks; above roughly 70–80% off-target effect the tumor is no longer cleared within the simulated time. This illustrates a trade-off in the model, not a finding about any real drug.
 
+### What the escape actually rests on (`sensitivity_affinity.py`)
+
+The escape threshold is the model's headline behaviour, so it is worth asking which assumption carries it. The obvious candidate is one I chose by hand: the tumor takes up glucose with a **higher affinity** than the T cells (half-saturation 1.0 vs 3.0). Nothing in my papers specifies these numbers.
+
+`sensitivity_affinity.py` sweeps the initial tumor size from 1 to 150 under four affinity settings and asks whether the tumor is larger at t = 100 than it started.
+
+![Affinity sensitivity](figures/fig6_affinity_sensitivity.png)
+
+| Setting | tumor Km | T-cell Km | escapes from | sizes escaping |
+|---|---|---|---|---|
+| **default** | 1.0 | 3.0 | **22** | 74 / 150 |
+| equal, at the tumor's value | 1.0 | 1.0 | — | **0 / 150** |
+| equal, at the T cell's value | 3.0 | 3.0 | — | **0 / 150** |
+| reversed | 3.0 | 1.0 | — | **0 / 150** |
+
+**The tumor never escapes unless its affinity is higher.** Not at any starting size tested, not at either value the two can be equalised to, and not when the advantage is handed to the T cells instead.
+
+So this model does **not** show that nutrient competition suppresses T cells. It shows that *unequal* competition does, and the inequality is an input, not an output. Stated the other way round: the positive feedback loop described above cannot start unless one competitor can draw glucose down to a level the other cannot work at.
+
+Two caveats on reading the figure. First, "escape" here means only that the tumor is larger at the end than at the start; in the default setting tumors converge to about 99 a.u. rather than growing without limit, so above a starting size of roughly 95 the tumor shrinks toward that level instead of growing. Second, the three non-default curves lie exactly on top of one another at zero.
+
+**Why this matters beyond the model.** The assumption is contested in the literature. Chang et al. (2015, *Cell*) reported that tumor glucose consumption metabolically restricts T cells ([doi:10.1016/j.cell.2015.08.016](https://doi.org/10.1016/j.cell.2015.08.016)). Reinfeld et al. (2021, *Nature*) found instead that myeloid cells take up the most intratumoral glucose, with cancer cells taking up the most glutamine, and that this partitioning is programmed cell-intrinsically through mTORC1 rather than driven by competition ([doi:10.1038/s41586-021-03442-1](https://doi.org/10.1038/s41586-021-03442-1)). This model sits on the first side of that question, by construction.
+
 ---
 
 ## 3. Version 2: the spatial model (`tme_spatial.py`)
@@ -134,6 +157,7 @@ Both models deliberately leave out a great deal of biology:
 - **Fixed T-cell number.** No proliferation, death or new T cells arriving from the blood.
 - **Simplified space.** One straight vessel, a coarse 2D grid, and "move toward tumor" instead of real chemokine gradients.
 - **Arbitrary units and parameters.** Thresholds, doses and times have no real-world meaning; only the qualitative patterns are of interest.
+- **The whole escape result rests on one chosen number.** The tumor's glucose affinity advantage is an input, and removing it removes the escape at every starting size tested — see "What the escape actually rests on" in Section 2. The assumption is also disputed in the literature, so this is the model's single largest weakness rather than a detail.
 - **Simple numerical method.** The Euler method is easy to follow but less accurate than adaptive solvers.
 
 ---
@@ -141,8 +165,9 @@ Both models deliberately leave out a great deal of biology:
 ## 5. Files
 
 ```
-tme_glucose.py      version 1: simple model, figures 1-3
-tme_spatial.py      version 2: spatial model, figures 4-5
+tme_glucose.py           version 1: simple model, figures 1-3
+tme_spatial.py           version 2: spatial model, figures 4-5
+sensitivity_affinity.py  affinity sensitivity check, figure 6
 figures/            all figures produced by the scripts
 web/index.html      interactive spatial model (version 2)
 web/simple.html     interactive simple model (version 1)
